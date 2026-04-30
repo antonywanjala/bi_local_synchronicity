@@ -1,0 +1,441 @@
+import os
+import time
+import sys
+import multiprocessing
+import queue
+import importlib.util
+from datetime import datetime, timezone
+
+# --- GOOGLE API IMPORTS ---
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+
+# --- CONFIGURATION ---
+SCOPES = ['https://www.googleapis.com/auth/drive']
+MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+LOCK_FOLDER_ID = "1bSY6zblLYnVnkVI0KPYFhFe0qjz_-b45"
+DRAFT_FILE = "draft_instructions.txt"
+LOCAL_VAR_FILE = "local_vars.txt"
+LOCK_TTL_SECONDS = 180
+
+# --- CONCURRENCY LIMITS ---
+MAX_INTRA_CONCURRENCY = 1  # Max tasks per this specific device
+MAX_INTER_CONCURRENCY = 1  # Max tasks across ALL devices globally
+
+active_subprocesses = {}
+
+
+# =============================================================================
+# DRIVE CORE & SLOTTED LOCK SYSTEM
+# =============================================================================
+def get_drive_service():
+    creds = None
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+    return build('drive', 'v3', credentials=creds)
+
+
+def acquire_global_lock_slotted(service, folder_id, my_id, slot_id, timeout=200, wait_time=6):
+    """Checks if global capacity allows for a new task across all devices."""
+    start_time = time.time()
+    my_lock_name = f"LOCK_D{my_id}_S{slot_id}.lock"
+
+    while time.time() - start_time < timeout:
+        try:
+            query = f"'{folder_id}' in parents and trashed=false and name contains 'LOCK_'"
+            results = service.files().list(q=query, fields="files(id, name, createdTime)").execute()
+            locks = results.get('files', [])
+
+            # Check if we already own a lock here
+            if any(l['name'] == my_lock_name for l in locks):
+                return True
+
+            # Clean stale locks
+            active_count = 0
+            now = datetime.now(timezone.utc)
+            for l in locks:
+                created_time = datetime.fromisoformat(l['createdTime'].replace('Z', '+00:00'))
+                if (now - created_time).total_seconds() > LOCK_TTL_SECONDS:
+                    service.files().delete(fileId=l['id']).execute()
+                else:
+                    active_count += 1
+
+            if active_count < MAX_INTER_CONCURRENCY:
+                file_metadata = {
+                    'name': my_lock_name,
+                    'parents': [folder_id],
+                    'description': f"Device {my_id} Slot {slot_id}"
+                }
+                service.files().create(body=file_metadata, fields='id').execute()
+                return True
+        except Exception as e:
+            pass  # Suppress spammy network errors
+
+        time.sleep(wait_time)
+    return False
+
+
+def release_global_lock_slotted(service, folder_id, my_id, slot_id):
+    try:
+        my_lock_name = f"LOCK_D{my_id}_S{slot_id}.lock"
+        query = f"name='{my_lock_name}' and '{folder_id}' in parents and trashed=false"
+        results = service.files().list(q=query, fields="files(id)").execute()
+        for item in results.get('files', []):
+            service.files().delete(fileId=item['id']).execute()
+    except Exception:
+        pass
+
+
+def purge_all_locks(service, folder_id):
+    """Used strictly for initial startup scrubbing."""
+    try:
+        query = f"'{folder_id}' in parents and trashed=false and name contains 'LOCK_'"
+        results = service.files().list(q=query, fields="files(id)").execute()
+        for item in results.get('files', []):
+            service.files().delete(fileId=item['id']).execute()
+    except Exception:
+        pass
+
+
+def _upload_item(service, local_path, g_id, log_q, slot, device_label):
+    log_q.put((slot, f"[{device_label}] Starting upload of: {local_path}"))
+    file_metadata = {'name': os.path.basename(local_path), 'parents': [g_id]}
+    media = MediaFileUpload(local_path, resumable=True)
+    request = service.files().create(body=file_metadata, media_body=media, fields='id')
+    response = None
+    while response is None:
+        _, response = request.next_chunk()
+    log_q.put((slot, f"Successfully uploaded: {os.path.basename(local_path)} (ID: {response.get('id')})"))
+
+
+# =============================================================================
+# WORKERS & DYNAMIC INVOKE
+# =============================================================================
+def concurrency_wrapper(start_delay, intra_sem, slot_id, log_queue, api_lock, my_id, choice, lock_wait, **kwargs):
+    """The Gatekeeper: Staggers invocation, manages local capacity, then global capacity."""
+
+    # --- INTRA-INSTRUCTION COUNTDOWN/TIMER ---
+    if start_delay > 0:
+        log_queue.put((slot_id, f"Intra-instruction stagger: Waiting {start_delay}s before starting..."))
+        for i in range(start_delay, 0, -1):
+            if i <= 3 or i % 5 == 0:
+                log_queue.put((slot_id, f"Invoking step in {i}s..."))
+            time.sleep(1)
+
+    log_queue.put((slot_id, f"Queued: Waiting for local slot (Max {MAX_INTRA_CONCURRENCY})..."))
+
+    with intra_sem:
+        log_queue.put((slot_id, "Local slot acquired. Negotiating Global Inter-device access..."))
+        service = get_drive_service()
+
+        if acquire_global_lock_slotted(service, LOCK_FOLDER_ID, my_id, slot_id, wait_time=lock_wait):
+            try:
+                script_path = kwargs.get('script_path', [None])[0]
+                func_name = kwargs.get('run', [None, None])[1]
+
+                if func_name == "trigger_sync":
+                    log_queue.put((slot_id, "Executing fallback sync worker logic..."))
+                    return
+
+                if not script_path or not os.path.exists(script_path):
+                    log_queue.put((slot_id, "Error: Script path invalid."))
+                    return
+
+                spec = importlib.util.spec_from_file_location("ext_mod", script_path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                func = getattr(module, func_name)
+
+                # Execute with local API lock to prevent thread collisions on local files
+                with api_lock:
+                    func(slot_id=slot_id, log_queue=log_queue, api_lock=api_lock, my_id=my_id, **kwargs)
+
+            except Exception as e:
+                log_queue.put((slot_id, f"Execution Error: {e}"))
+            finally:
+                release_global_lock_slotted(service, LOCK_FOLDER_ID, my_id, slot_id)
+                log_queue.put((slot_id, "Task complete. Released Global slot."))
+        else:
+            log_queue.put((slot_id, "Global Timeout: Inter-device capacity full."))
+
+
+# =============================================================================
+# SYSTEM WRAPPERS & MONITOR
+# =============================================================================
+def load_local_variables(filepath):
+    local_vars = {}
+    if os.path.exists(filepath):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if ":" in line and not line.startswith("#"):
+                    key, val = line.split(":", 1)
+                    local_vars[key.strip()] = val.strip()
+    return local_vars
+
+
+def parse_syntax(content, my_id, local_vars, log_queue, api_lock, intra_sem, choice, lock_wait):
+    blocks = content.split('[Subprocess')
+    device_task_count = 0  # Counter to calculate stagger delay
+
+    for block in blocks:
+        if not block.strip(): continue
+
+        try:
+            slot_id = block.split(':')[0].strip()
+            if not slot_id: slot_id = "Unknown"
+        except Exception:
+            slot_id = "Unknown"
+
+        full_block = '[Subprocess' + block
+
+        if "NOT FUNCTIONAL" in full_block:
+            if slot_id in active_subprocesses:
+                proc = active_subprocesses[slot_id]
+                if proc.is_alive():
+                    log_queue.put((slot_id, "Shutting down: Status changed to NOT FUNCTIONAL"))
+                    proc.terminate()
+                    proc.join()
+                del active_subprocesses[slot_id]
+            continue
+
+        if "FUNCTIONAL" in full_block:
+            context_vars = local_vars.copy()
+            lines = full_block.split('\n')
+            run_triggered = False
+
+            for line in lines:
+                while "[" in line and "]" in line:
+                    start = line.find("[")
+                    end = line.find("]") + 1
+                    line = line[:start] + line[end:]
+                line = line.lstrip('\ufeff ').strip()
+
+                if not line or line.startswith(("#", "[Sub")): continue
+
+                if ":" in line and not line.startswith("run"):
+                    key, val = line.split(":", 1)
+                    clean_key = key.split(']')[-1].strip() if ']' in key else key.strip()
+                    context_vars[clean_key] = val.strip()
+                elif line.startswith("run:"):
+                    run_content = line.replace("run:", "").strip()
+                    if " " in run_content:
+                        parts = run_content.split()
+                        if len(parts) >= 2:
+                            context_vars['script_path'] = parts
+                            context_vars['run'] = parts
+                    else:
+                        context_vars['run'] = run_content
+                    run_triggered = True
+
+            if str(context_vars.get('target_device', '1')).strip() == my_id:
+                if run_triggered:
+                    if slot_id not in active_subprocesses or not active_subprocesses[slot_id].is_alive():
+                        # Calculate staggered delay (e.g., 5 seconds delay per sequential task)
+                        start_delay = device_task_count * 5
+                        device_task_count += 1
+
+                        p = multiprocessing.Process(
+                            target=concurrency_wrapper,
+                            args=(start_delay, intra_sem, slot_id, log_queue, api_lock, my_id, choice, lock_wait),
+                            kwargs=context_vars
+                        )
+                        p.start()
+                        active_subprocesses[slot_id] = p
+
+
+def logger_worker(log_queue):
+    while True:
+        try:
+            record = log_queue.get(timeout=1)
+            if record == "STOP": break
+            if isinstance(record, (tuple, list)) and len(record) == 2:
+                slot, text = record
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Subprocess {slot}: {text}", flush=True)
+        except queue.Empty:
+            continue
+
+
+def instruction_builder(my_device, choice, intra_sem):
+    draft = ""
+    if os.path.exists(DRAFT_FILE):
+        with open(DRAFT_FILE, "r") as f: draft = f.read()
+
+    while True:
+        print(f"\n--- Instruction Builder (Device: {my_device}) ---")
+        print("1. Add Standard Sync Step (Upload/Download)")
+        print("2. Add Dynamic Remote Subroutine Step (Script path + function)")
+        print("3. View/Clear Draft")
+        print("4. Instantiate Locally / Publish Extralocally")
+        print("5. Go Back to Main Menu")
+        sub_choice = input("> ").strip()
+
+        if sub_choice == '1':
+            s_id = input("Subprocess ID: ").strip()
+            act = input("Action (upload/download): ").strip()
+            dev = input("Target Device: ").strip()
+            path = input("Local Path: ").strip()
+            gid = input("GDrive ID: ").strip()
+            draft += f"[Subprocess {s_id}: FUNCTIONAL]\naction: {act}\ntarget_device: {dev}\ntarget_path: {path}\ngdrive_target_id: {gid}\nrun: trigger_sync\n\n"
+
+        elif sub_choice == '2':
+            s_id = input("Subprocess ID: ").strip()
+            dev = input("Target Device ID to run logic on: ").strip()
+            py_path = input("Absolute Local Path to .py script: ").strip()
+            func = input("Function Name inside script: ").strip()
+            args = input("Comma-separated kwargs (e.g. speed: 10): ").strip()
+            step = f"[Subprocess {s_id}: FUNCTIONAL]\ntarget_device: {dev}\n"
+            for arg in args.split(','):
+                if ':' in arg: step += f"{arg.strip()}\n"
+            step += f"run: {py_path} {func}\n\n"
+            draft += step
+            print("✅ Dynamic remote step added.")
+
+        elif sub_choice == '3':
+            print(f"\n--- Current Draft ---\n{draft if draft else '[Empty]'}")
+            if draft and input("Clear draft? (y/n): ").lower() == 'y':
+                draft = ""
+                if os.path.exists(DRAFT_FILE): os.remove(DRAFT_FILE)
+                print("Draft has been cleared.")
+
+        elif sub_choice == '4':
+            if not draft: continue
+            epoch = int(time.time())
+            fname = f"generated_instructions_{epoch}.txt"
+
+            if input("Publish to ExtraLocal Mediating Folder? (y/n): ").lower() == 'y':
+                with open(fname, "w") as f: f.write(draft)
+                _upload_item(get_drive_service(), fname, MONITOR_FOLDER_ID, multiprocessing.Queue(), "SYS", "BUILDER")
+                print(f"✅ Published ExtraLocally as {fname}")
+
+            if input("Run resultant instructions for local device role now? (y/n): ").lower() == 'y':
+                print("Instantiating Local Roles... (Waiting for completion)")
+                api_lock = multiprocessing.Lock()
+                log_q = multiprocessing.Queue()
+                lp = multiprocessing.Process(target=logger_worker, args=(log_q,))
+                lp.start()
+
+                local_vars = load_local_variables(LOCAL_VAR_FILE)
+                parse_syntax(draft, my_device, local_vars, log_q, api_lock, intra_sem, choice, lock_wait=6)
+
+                for slot, proc in list(active_subprocesses.items()):
+                    proc.join()
+
+                log_q.put("STOP")
+                lp.join()
+                print("Local instantiation complete.")
+            break
+
+        elif sub_choice == '5':
+            break
+
+
+def monitor_mode(my_id, intra_sem, p_int=6, lock_wait=6):
+    api_lock = multiprocessing.Lock()
+    log_queue = multiprocessing.Queue()
+    lp = multiprocessing.Process(target=logger_worker, args=(log_queue,))
+    lp.start()
+
+    service = get_drive_service()
+    known_files = {}
+
+    print(f"Monitoring ExtraLocal Drive as Device {my_id}...")
+    try:
+        while True:
+            try:
+                local_vars = load_local_variables(LOCAL_VAR_FILE)
+                # Ignore folders to avoid download crashes
+                query = f"'{MONITOR_FOLDER_ID}' in parents and trashed=false and mimeType != 'application/vnd.google-apps.folder'"
+                results = service.files().list(q=query, fields="files(id, name, modifiedTime, mimeType)").execute()
+
+                for item in results.get('files', []):
+                    f_id_item = item['id']
+                    m_time = item['modifiedTime']
+
+                    if "LOCK_" in item['name']: continue
+
+                    if f_id_item not in known_files or known_files[f_id_item] != m_time:
+                        known_files[f_id_item] = m_time
+
+                        # Handle GDocs and standard text files appropriately
+                        if item['mimeType'] == 'application/vnd.google-apps.document':
+                            request = service.files().export_media(fileId=f_id_item, mimeType='text/plain')
+                        else:
+                            request = service.files().get_media(fileId=f_id_item)
+
+                        content = request.execute().decode('utf-8', errors='ignore')
+                        parse_syntax(content, my_id, local_vars, log_queue, api_lock, intra_sem, '2', lock_wait)
+            except Exception as e:
+                print(f"Polling Error: {e}")
+            time.sleep(p_int)
+    except KeyboardInterrupt:
+        log_queue.put("STOP")
+        lp.join()
+        for p in active_subprocesses.values():
+            if p.is_alive(): p.terminate()
+
+
+# =============================================================================
+# MAIN MENU EXECUTION
+# =============================================================================
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+
+    # Initial Setup Prompts
+    raw_input = input("What device are you currently on (ex. 1, 2, 3)? >? ").strip()
+    dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+    intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+    # Automated Startup Purge
+    print("Scrubbing Drive for orphaned locks...")
+    try:
+        temp_service = get_drive_service()
+        purge_all_locks(temp_service, LOCK_FOLDER_ID)
+        print("✅ Cleanup complete. All previous locks purged.")
+    except Exception as e:
+        print(f"⚠️ Cleanup failed (check network): {e}")
+    """
+    print("MULTI_DEVICE_INTER_CONCURRENCY SUBROUTINE COUNT: " + f'{MAX_INTRA_CONCURRENCY=}')
+    print("MULTI_DEVICE_INTRA_CONCURRENCY SUBROUTINE COUNT: " + f'{MAX_INTER_CONCURRENCY=}')
+
+    print("MULTI_DEVICE_INTER_CONCURRENCY SUBPROCESS COUNT: " + f'{MAX_INTRA_CONCURRENCY=}')
+    print("MULTI_DEVICE_INTRA_CONCURRENCY SUBPROCESS COUNT: " + f'{MAX_INTER_CONCURRENCY=}')
+    """
+    print(f'{MAX_INTRA_CONCURRENCY=}')
+    print(f'{MAX_INTER_CONCURRENCY=}')
+    # Main Loop
+    while True:
+        print(f"\n=== System Initialized (Device {dev_id}) ===")
+        print("1. Instruction Builder / Relay Mode")
+        print("2. Start Multi-Device Monitor Mode")
+        print("3. Exit")
+        choice = input("> >? ").strip()
+
+        if choice == '1':
+            instruction_builder(dev_id, choice, intra_semaphore)
+
+        elif choice == '2':
+            # Dynamic polling and lock wait prompts
+            p_int_input = input("Enter poll interval (seconds to check for NEW instructions): >? ").strip()
+            p_interval = int(p_int_input) if p_int_input else 6
+
+            l_wait_input = input("Enter lock wait timer (seconds to wait between busy-lock retries): >? ").strip()
+            l_wait = int(l_wait_input) if l_wait_input else 6
+
+            monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+        elif choice == '3':
+            print("System shutting down.")
+            sys.exit()
