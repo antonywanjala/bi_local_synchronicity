@@ -1,0 +1,109 @@
+import time
+import random
+import csv
+import sys
+import os
+
+def process_text_to_csv(input_file, output_file, max_ngram=4):
+    greek_alphabet = ["alpha", "beta", "gamma", "delta", "epsilon", "zeta", "iota"]
+
+    try:
+        # errors='replace' handles non-standard characters safely
+        with open(input_file, 'r', encoding='utf-8', errors='replace') as f:
+            text = f.read()
+    except Exception as e:
+        print(f"\n[!] Failed to read the input file: {e}")
+        return
+
+    # REGEX-FREE SPLITTING
+    temp_text = text.replace('!', '.').replace('?', '.')
+    statements = [s.strip() for s in temp_text.split('.') if s.strip()]
+
+    # Global counter for letters across the whole document
+    inter_statement_letter_counter = {letter: 0 for letter in greek_alphabet}
+
+    try:
+        # We open the CSV file immediately for writing
+        with open(output_file, 'w', newline='', encoding='utf-8-sig') as csvfile:
+            fieldnames = [
+                "Statement Index", "Statement", "Intra-Statement Substring",
+                "Intra-Statement Substring Index", "Intra-Statement Substring Length (in words)",
+                "Word in Statement", "Intra-Statement Substring Word Index",
+                "Intra-Statement Word Index", "Letter",
+                "Inter-Statement Letter Counter", "Intra-Statement Letter Counter",
+                "Intra-Statement Substring Letter Counter"
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for s_idx, statement in enumerate(statements):
+                words = statement.split()
+                num_words = len(words)
+                intra_statement_letter_counter = {letter: 0 for letter in greek_alphabet}
+
+                for i in range(0, num_words, max_ngram):
+                    substring_words = words[i:i + max_ngram]
+                    substring_text = " ".join(substring_words)
+                    substring_index = i // max_ngram
+                    substring_len_words = len(substring_words)
+                    intra_substr_letter_counter = {letter: 0 for letter in greek_alphabet}
+
+                    for sub_word_idx, word in enumerate(substring_words):
+                        actual_word_idx = i + sub_word_idx
+                        selected_letter = random.choice(greek_alphabet)
+
+                        inter_statement_letter_counter[selected_letter] += 1
+                        intra_statement_letter_counter[selected_letter] += 1
+                        intra_substr_letter_counter[selected_letter] += 1
+
+                        # CLEANING: Removes brackets, quotes, and punctuation
+                        clean_word = word.lower().strip('.,!?;:"()[]{}<>')
+
+                        writer.writerow({
+                            "Statement Index": s_idx,
+                            "Statement": statement + ".",
+                            "Intra-Statement Substring": substring_text,
+                            "Intra-Statement Substring Index": substring_index,
+                            "Intra-Statement Substring Length (in words)": substring_len_words,
+                            "Word in Statement": clean_word,
+                            "Intra-Statement Substring Word Index": sub_word_idx,
+                            "Intra-Statement Word Index": actual_word_idx,
+                            "Letter": selected_letter,
+                            "Inter-Statement Letter Counter": inter_statement_letter_counter[selected_letter],
+                            "Intra-Statement Letter Counter": intra_statement_letter_counter[selected_letter],
+                            "Intra-Statement Substring Letter Counter": intra_substr_letter_counter[selected_letter]
+                        })
+
+        print(f"\n[SUCCESS] File successfully saved to: {os.path.abspath(output_file)}")
+
+    except Exception as e:
+        print(f"\n[ERROR] Could not write to CSV: {e}")
+
+if __name__ == "__main__":
+    print("========================================")
+    print("       TEXT ANALYSIS TOOL (V2)          ")
+    print("========================================")
+
+    try:
+        # Prompt user for path
+        raw_path = input("\n1. Paste absolute file path of .txt: ").strip()
+        input_file_path = raw_path.replace('"', '').replace("'", "")
+
+        if not os.path.exists(input_file_path):
+            print(f"\n[ERROR] File not found at: {input_file_path}")
+        else:
+            # Create filename
+            output_file_name = f"output_analysis_{int(time.time())}.csv"
+
+            n_gram_input = input("2. Enter max n-gram length (default 4): ")
+            n_gram_val = int(n_gram_input) if n_gram_input.strip() else 4
+
+            process_text_to_csv(input_file_path, output_file_name, n_gram_val)
+
+    except Exception as e:
+        print(f"\n[CRITICAL ERROR] {e}")
+
+    # THIS PREVENTS THE WINDOW FROM CLOSING
+    print("\n" + "="*40)
+    print("Process Finished.")
+    input("Press ENTER to close this window...")
