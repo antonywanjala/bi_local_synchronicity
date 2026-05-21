@@ -18,7 +18,7 @@ def authenticate_gdrive():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('credentials7.json', SCOPES)
             creds = flow.run_local_server(port=0)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
@@ -50,7 +50,7 @@ def generate_instruction_set():
     print("--- Instruction Set Builder (Custom Variable Edition) ---")
 
     parent_gdrive_folder_id = input(
-        "Enter the ID of the TARGET Parent Google Drive Folder [Press Enter for Default]: ").strip() or "placeholderfolderIDhere"
+        "Enter the ID of the TARGET Parent Google Drive Folder [Press Enter for Default]: ").strip() or "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
 
     # 1. Variable Schema Selection
     use_defaults = input("\nDo you want to use the default variable schema? (Y/n): ").strip().lower()
@@ -61,15 +61,15 @@ def generate_instruction_set():
 
     if use_defaults in ['', 'y', 'yes']:
         default_vars = {
-            "gdrive_target_id": "placeholderfolderIDhere1",
-            "txt_terms_path": "placeholderabsolutepathhere",
+            "gdrive_target_id": "1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT",
+            "txt_terms_path": r"C:\Users\awanj\PycharmProjects\disruptive_innovation38\words_alpha.txt",
             "max_retries": "1000",
             "max_hierarchy": "1000",
             "abridged": "False",
             "max_chars": "50",
             "cooldown_seconds": "1.0",
             "debug_mode": "n",
-            "run": "placeholderabsolutepathhere1"
+            "run": r"C:\Users\awanj\PycharmProjects\disruptive_innovation38\prelim_main_folder_parser_integra11.py"
         }
         for key, current_val in default_vars.items():
             new_val = input(f"Assign value for '{key}' [Current: {current_val}]: ").strip()
@@ -155,9 +155,9 @@ def generate_instruction_set_ELEMENT3(device_count=1, device_id='1', func_count=
     print(f"Project folder is: {project_dir}")
 
     # Example: Safely building an absolute path to another script
-    dynamic_script_path = os.path.join(project_dir, "placeholderscripthere")
+    dynamic_script_path = os.path.join(project_dir, "prelim_main_folder_parser_integra11.py")
 
-    parent_gdrive_folder_id = "placeholderfolderIDhere2"
+    parent_gdrive_folder_id = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
 
     # 1. Variable Schema Selection
     use_defaults = 'y'
@@ -168,7 +168,7 @@ def generate_instruction_set_ELEMENT3(device_count=1, device_id='1', func_count=
 
     if use_defaults in ['', 'y', 'yes']:
         default_vars = {
-            "gdrive_target_id": "placeholderfolderIDhere3",
+            "gdrive_target_id": "1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT",
             "txt_terms_path": project_dir + "\\" + r"words_alpha.txt",
             "max_retries": "1000",
             "max_hierarchy": "1000",
@@ -176,7 +176,7 @@ def generate_instruction_set_ELEMENT3(device_count=1, device_id='1', func_count=
             "max_chars": "50",
             "cooldown_seconds": "1.0",
             "debug_mode": "n",
-            "run": dynamic_script_path + " " + r"placeholderfunctionhere"
+            "run": dynamic_script_path + " " + r"variable_function_local_sync_parser_11"
         }
 
         for key, current_val in default_vars.items():
@@ -262,9 +262,9 @@ def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_co
     print(f"Project folder is: {project_dir}")
 
     # Example: Safely building an absolute path to another script
-    dynamic_script_path = os.path.join(project_dir, "placeholderscripthere2")
+    dynamic_script_path = os.path.join(project_dir, "prompt_gemini_for_vg_prompt_formula_inserter0_1_11_integra11.py")
     print(f'{dynamic_script_path=}')
-    parent_gdrive_folder_id = "placeholderfolderIDhere4"
+    parent_gdrive_folder_id = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
 
     # 1. Variable Schema Selection
     use_defaults = 'y'
@@ -275,7 +275,7 @@ def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_co
 
     if use_defaults in ['', 'y', 'yes']:
         default_vars = {
-            "gdrive_target_id": "placeholderfolderIDhere5",
+            "gdrive_target_id": "1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT",
             "txt_terms_path": project_dir + "\\" + r"words_alpha.txt",
             "max_retries": "1000",
             "max_hierarchy": "1000",
@@ -283,7 +283,7 @@ def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_co
             "max_chars": "50",
             "cooldown_seconds": "1.0",
             "debug_mode": "n",
-            "run": dynamic_script_path + " " + r"placeholderfunctionhere2"
+            "run": dynamic_script_path + " " + r"variable_function_local_sync_parser_11"
         }
 
         for key, current_val in default_vars.items():
@@ -360,7 +360,7 @@ def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_co
         print(f"\nError: {e}")
 
 
-def generate_instruction_set_prompt_vg_inserter(parent_gdrive_folder_id="placeholderfolderIDhere6", use_defaults="n", device_count='2', device_id='1', func_count='7', non_func_count='1'):
+def generate_instruction_set_prompt_vg_inserter(parent_gdrive_folder_id="1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v", use_defaults="n", device_count='2', device_id='1', func_count='7', non_func_count='1'):
     print("--- Instruction Set Builder (Custom Variable Edition) ---")
 
     #parent_gdrive_folder_id = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
@@ -371,18 +371,18 @@ def generate_instruction_set_prompt_vg_inserter(parent_gdrive_folder_id="placeho
     variables = {}
     receipt_log = []
     print("\n--- Variable Assignation Phase ---")
-    
+
     if use_defaults in ['', 'y', 'yes']:
         default_vars = {
-            "gdrive_target_id": "placeholderfolderIDhere7",
-            "txt_terms_path": "placeholderabsolutepathhere2",
+            "gdrive_target_id": "1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT",
+            "txt_terms_path": r"C:\Users\awanj\PycharmProjects\disruptive_innovation38\words_alpha.txt",
             "max_retries": "1000",
             "max_hierarchy": "1000",
             "abridged": "False",
             "max_chars": "50",
             "cooldown_seconds": "1.0",
             "debug_mode": "n",
-            "run": "placeholderabsolutepathhere3"
+            "run": r"C:\Users\awanj\PycharmProjects\disruptive_innovation38\prelim_main_folder_parser_integra11.py"
         }
         for key, current_val in default_vars.items():
             new_val = input(f"Assign value for '{key}' [Current: {current_val}]: ").strip()
@@ -391,7 +391,7 @@ def generate_instruction_set_prompt_vg_inserter(parent_gdrive_folder_id="placeho
             receipt_log.append(f"RECEIPT: Assigned '{variables[key]}' to '{key}'")
     else:
         #print("Enter your custom variables. Leave the variable name blank and press Enter when finished.")
-        sequentialization = [['run', "placholderabsolutepathhere4", 'placeholderfunctionhere3']]
+        sequentialization = [['run', 'C:\\Users\\awanj\\PycharmProjects\\disruptive_innovation38\\prompt_gemini_for_vg_prompt_formula_inserter0_1_11_integra11.py', 'variable_function_local_sync_parser_11']]
         counter = 0
         while counter < len(sequentialization):
             var_name = sequentialization[counter][0]
@@ -463,7 +463,7 @@ def generate_instruction_set_prompt_vg_inserter(parent_gdrive_folder_id="placeho
     except Exception as e:
         print(f"\nError: {e}")
 
-def generate_instruction_set_prelim1(parent_gdrive_folder_id="placeholderfolderIDhere5", use_defaults="n", device_count='2', device_id='1', func_count='7', non_func_count='1', dev_id='1'):
+def generate_instruction_set_prelim1(parent_gdrive_folder_id="1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v", use_defaults="n", device_count='2', device_id='1', func_count='7', non_func_count='1', dev_id='1'):
     print("--- Instruction Set Builder (Custom Variable Edition) ---")
 
     #parent_gdrive_folder_id = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
@@ -477,25 +477,25 @@ def generate_instruction_set_prelim1(parent_gdrive_folder_id="placeholderfolderI
 
     if use_defaults in ['', 'y', 'yes']:
         default_vars = {
-            "gdrive_target_id": "placeholderfolderIDhere6",
-            "txt_terms_path": "placeholderabsolutepathhere3",
+            "gdrive_target_id": "1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT",
+            "txt_terms_path": r"C:\Users\awanj\PycharmProjects\disruptive_innovation38\words_alpha.txt",
             "max_retries": "1000",
             "max_hierarchy": "1000",
             "abridged": "True",
             "max_chars": "50",
             "cooldown_seconds": "1.0",
             "debug_mode": "n",
-            "run": "placeholderabsolutepathhere4"
+            "run": r"C:\Users\awanj\PycharmProjects\disruptive_innovation38\prelim_main_folder_parser_integra11.py"
         }
-        sequentialization = [['gdrive_target_id', 'placeholderfolderIDhere7'],
-                             ['txt_terms_path', "placeholderfolderIDhere6"],
+        sequentialization = [['gdrive_target_id', '1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT'],
+                             ['txt_terms_path', r"C:\Users\awanj\PycharmProjects\disruptive_innovation38\words_alpha.txt"],
                              ['max_retries', "1000"],
                              ['max_hierarchy', "1000"],
                              ['abridged', "True"],
                              ['max_chars', "50"],
                              ['cooldown_seconds', "50"],
                              ["debug_mode", "n"],
-                            ["run", "placeholderabsolutepathhere8", "placeholderfunctionhere4"]
+                            ["run", r"C:\Users\awanj\PycharmProjects\disruptive_innovation38\prelim_main_folder_parser_integra11.py", "variable_function_local_sync_parser_11"]
                             ]
         counter = 0
         while counter < len(sequentialization):
@@ -513,7 +513,7 @@ def generate_instruction_set_prelim1(parent_gdrive_folder_id="placeholderfolderI
             counter += 1
     else:
         #print("Enter your custom variables. Leave the variable name blank and press Enter when finished.")
-        sequentialization = [['run', "placeholderabsolutepathhere9", "placeholderfunctionnamehere8"]]
+        sequentialization = [['run', 'C:\\Users\\awanj\\PycharmProjects\\disruptive_innovation38\\prompt_gemini_for_vg_prompt_formula_inserter0_1_11_integra11.py', 'variable_function_local_sync_parser_11']]
         counter = 0
         while counter < len(sequentialization):
             var_name = sequentialization[counter][0]
@@ -585,7 +585,8 @@ def generate_instruction_set_prelim1(parent_gdrive_folder_id="placeholderfolderI
     except Exception as e:
         print(f"\nError: {e}")
 
-def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_count=7, non_func_count=1):
+
+def generate_instruction_set_DESIGNATION6(device_count=1, device_id='1', func_count=7, non_func_count=1):
     print("--- Instruction Set Builder (Custom Variable Edition) ---")
 
     # Get the absolute path of the current script, then get its directory
@@ -594,9 +595,9 @@ def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_co
     print(f"Project folder is: {project_dir}")
 
     # Example: Safely building an absolute path to another script
-    dynamic_script_path = os.path.join(project_dir, "placeholderscriptnamehere7")
+    dynamic_script_path = os.path.join(project_dir, "prompt_gemini_for_vg_prompt_formula_inserter0_1_11_integra11.py")
     print(f'{dynamic_script_path=}')
-    parent_gdrive_folder_id = "placeholderfolderIDhere11"
+    parent_gdrive_folder_id = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
 
     # 1. Variable Schema Selection
     use_defaults = 'y'
@@ -607,7 +608,7 @@ def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_co
 
     if use_defaults in ['', 'y', 'yes']:
         default_vars = {
-            "gdrive_target_id": "placeholderfolderIDhere12",
+            "gdrive_target_id": "1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT",
             "txt_terms_path": project_dir + "\\" + r"words_alpha.txt",
             "max_retries": "1000",
             "max_hierarchy": "1000",
@@ -615,7 +616,7 @@ def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_co
             "max_chars": "50",
             "cooldown_seconds": "1.0",
             "debug_mode": "n",
-            "run": dynamic_script_path + " " + "placeholderfunctionhere12"
+            "run": dynamic_script_path + " " + r"variable_function_local_sync_parser_11"
         }
 
         for key, current_val in default_vars.items():
@@ -690,6 +691,7 @@ def generate_instruction_set_DESIGNATION4(device_count=1, device_id='1', func_co
         return new_folder_id
     except Exception as e:
         print(f"\nError: {e}")
+
 
 def generate_instruction_set_send_to_post_designation(device_count=1, device_id='1', func_count=7, non_func_count=1, email_address=None):
     print("--- Instruction Set Builder (Custom Variable Edition) ---")
@@ -701,9 +703,9 @@ def generate_instruction_set_send_to_post_designation(device_count=1, device_id=
     print(f"Project folder is: {project_dir}")
 
     # Example: Safely building an absolute path to another script
-    dynamic_script_path = os.path.join(project_dir, "placeholderscriptnamehere14")
+    dynamic_script_path = os.path.join(project_dir, "send_email_post_to_wordpress1_10_11wslotid.py")
     print(f'{dynamic_script_path=}')
-    parent_gdrive_folder_id = "placeholderfolderIDhere16"
+    parent_gdrive_folder_id = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
 
     # 1. Variable Schema Selection
     use_defaults = 'y'
@@ -714,7 +716,7 @@ def generate_instruction_set_send_to_post_designation(device_count=1, device_id=
 
     if use_defaults in ['', 'y', 'yes']:
         default_vars = {
-            "gdrive_target_id": placeholderfolderIDhere17,
+            "gdrive_target_id": "1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT",
             "txt_terms_path": project_dir + "\\" + r"words_alpha.txt",
             "max_retries": "1000",
             "max_hierarchy": "1000",
@@ -723,7 +725,7 @@ def generate_instruction_set_send_to_post_designation(device_count=1, device_id=
             "cooldown_seconds": "1.0",
             "debug_mode": "n",
             "email_address": email_address,
-            "run": dynamic_script_path + " " + "placeholderfolderhere18"
+            "run": dynamic_script_path + " " + r"send_email_to_wordpress_vg_standard"
         }
 
         for key, current_val in default_vars.items():
@@ -800,20 +802,15 @@ def generate_instruction_set_send_to_post_designation(device_count=1, device_id=
         print(f"\nError: {e}")
 
 
-import os
-import datetime
-
 def sub_log(log_queue, slot_id, message):
-    """Utility to ensure every message is tagged before hitting the console."""
+    """
+    Utility to ensure every message is tagged before hitting the console.
+    """
     if log_queue is not None:
         log_queue.put((slot_id, message))
     else:
         # Fallback to standard print if no queue is provided
         print(f"[{slot_id}] {message}")
-
-
-import os
-import datetime
 
 
 def execute_unified_pipeline(device_count=1, device_id='1', scripts_config=None, log_queue=None, slot_id=None,
@@ -831,10 +828,11 @@ def execute_unified_pipeline(device_count=1, device_id='1', scripts_config=None,
         return "NOT SUCCESSFUL"
 
     project_dir = os.path.dirname(os.path.abspath(__file__))
-    email_address = kwargs.get('email_address', 'Not Provided')
+
+    # -----------------------------------------------------------------
 
     # The master folder ID where all session folders are stored
-    master_monitor_id = kwargs.get('gdrive_folder_id', "placeholderfolderIDhere19")
+    master_monitor_id = kwargs.get('gdrive_folder_id', '1tH9pf8wfeJzcEVrtCIvi2XfsxkLAu7dT')
 
     # 1. Create a New Session Folder inside the Master Monitor Folder
     folder_name = f"Session_Folder_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -848,7 +846,10 @@ def execute_unified_pipeline(device_count=1, device_id='1', scripts_config=None,
         folder = drive_service.files().create(body=folder_metadata, fields='id').execute()
         folder_id = folder.get('id')
     except Exception as e:
-        sub_log(log_queue, slot_id, f"[ERROR] Failed to create GDrive folder: {e}")
+        if log_queue:
+            sub_log(log_queue, slot_id, f"[ERROR] Failed to create GDrive folder: {e}")
+        else:
+            print(f"[ERROR] Failed to create GDrive folder: {e}")
         return "NOT SUCCESSFUL"
 
     # Define local file name for temporary storage
@@ -857,7 +858,6 @@ def execute_unified_pipeline(device_count=1, device_id='1', scripts_config=None,
     output_blocks = []
 
     # 2. Process Scripts
-    current_subprocess = 1
     for script_idx, config in enumerate(scripts_config):
         f_name = config.get('file')
         func_name = config.get('func')
@@ -865,7 +865,8 @@ def execute_unified_pipeline(device_count=1, device_id='1', scripts_config=None,
         nf_count = int(config.get('nf_count', 0))
         script_path = os.path.join(project_dir, f_name)
 
-        # UPDATED: gdrive_target_id now points to the specific folder created above
+        current_email = config.get('email_address')
+
         variables = {
             "gdrive_target_id": folder_id,
             "txt_terms_path": os.path.join(project_dir, "words_alpha.txt"),
@@ -875,13 +876,14 @@ def execute_unified_pipeline(device_count=1, device_id='1', scripts_config=None,
             "max_chars": "50",
             "cooldown_seconds": "1.0",
             "debug_mode": "n",
-            "email_address": email_address,
+            "email_address": current_email,
             "run": f"{script_path} {func_name}"
         }
 
         for key, val in variables.items():
             receipt_log.append(f"RECEIPT [Script: {f_name}]: Assigned '{val}' to '{key}'")
 
+        current_subprocess = 1
         for _ in range(int(device_count)):
             for _ in range(f_count):
                 block = [f"[Subprocess {current_subprocess}: FUNCTIONAL]", f"target_device: {device_id}"]
@@ -904,7 +906,7 @@ def execute_unified_pipeline(device_count=1, device_id='1', scripts_config=None,
 
     # 4. Write Local Copy and Upload to the New GDrive Folder
     try:
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write(final_text)
 
         from googleapiclient.http import MediaFileUpload
@@ -912,17 +914,33 @@ def execute_unified_pipeline(device_count=1, device_id='1', scripts_config=None,
             'name': f"unified_instructions_{datetime.datetime.now().strftime('%H%M%S')}.txt",
             'parents': [folder_id]
         }
-        media = MediaFileUpload(file_name, mimetype='text/plain')
+
+        # Initializing media upload within an explicit lifecycle step
+        media = MediaFileUpload(file_name, mimetype='text/plain', resumable=False)
         drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
 
-        sub_log(log_queue, slot_id, f"[SUCCESS] Instructions uploaded to GDrive Folder: {folder_id}")
-        os.remove(file_name)
+        if log_queue:
+            sub_log(log_queue, slot_id, f"[SUCCESS] Instructions uploaded to GDrive Folder: {folder_id}")
+        else:
+            print(f"[SUCCESS] Instructions uploaded to GDrive Folder: {folder_id}")
 
     except Exception as e:
-        sub_log(log_queue, slot_id, f"[ERROR] GDrive Upload Failed: {e}")
+        if log_queue:
+            sub_log(log_queue, slot_id, f"[ERROR] GDrive Upload Failed: {e}")
+        else:
+            print(f"[ERROR] GDrive Upload Failed: {e}")
         return "NOT SUCCESSFUL"
 
+    # Isolated cleanup step: Prevents WinError 32 from dropping execution flow before returning folder_id
+    try:
+        if os.path.exists(file_name):
+            os.remove(file_name)
+    except Exception as cleanup_error:
+        # Log failure quietly, do not kill the main return pipeline execution
+        print(f"[WARNING] Local temp file cleanup deferred: {cleanup_error}")
+
     return folder_id
+
 
 if __name__ == "__main__":
     generate_instruction_set()
