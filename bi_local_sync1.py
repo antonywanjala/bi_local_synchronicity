@@ -12,18 +12,20 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+from make_instruction_sets8 import generate_instruction_set, generate_instruction_set_prompt_vg_inserter, generate_instruction_set_ELEMENT3, generate_instruction_set_DESIGNATION4, generate_instruction_set_send_to_post_designation, execute_unified_pipeline
+from send_email_post_to_wordpress1_10_10MAIN import send_email_to_wordpress_vg_standard, send_email_to_wordpress_non_vg_standard
 
 # --- CONFIGURATION ---
 SCOPES = ['https://www.googleapis.com/auth/drive']
-MONITOR_FOLDER_ID = "id3"
-LOCK_FOLDER_ID = "id6"
+MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+LOCK_FOLDER_ID = "1bSY6zblLYnVnkVI0KPYFhFe0qjz_-b45"
 DRAFT_FILE = "draft_instructions.txt"
 LOCAL_VAR_FILE = "local_vars.txt"
 LOCK_TTL_SECONDS = 180
 
 # --- CONCURRENCY LIMITS ---
-MAX_INTRA_CONCURRENCY = 2  # Max tasks per this specific device
-MAX_INTER_CONCURRENCY = 2  # Max tasks across ALL devices globally
+MAX_INTRA_CONCURRENCY = 1  # Max tasks per this specific device
+MAX_INTER_CONCURRENCY = 1  # Max tasks across ALL devices globally
 
 active_subprocesses = {}
 
@@ -39,7 +41,7 @@ def get_drive_service():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('credentials7.json', SCOPES)
             creds = flow.run_local_server(port=0)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
@@ -158,8 +160,8 @@ def concurrency_wrapper(start_delay, intra_sem, slot_id, log_queue, api_lock, my
                 func = getattr(module, func_name)
 
                 # Execute with local API lock to prevent thread collisions on local files
-                with api_lock:
-                    func(slot_id=slot_id, log_queue=log_queue, api_lock=api_lock, my_id=my_id, **kwargs)
+                #with api_lock:
+                func(slot_id=slot_id, log_queue=log_queue, api_lock=api_lock, my_id=my_id, **kwargs)
 
             except Exception as e:
                 log_queue.put((slot_id, f"Execution Error: {e}"))
@@ -243,7 +245,8 @@ def parse_syntax(content, my_id, local_vars, log_queue, api_lock, intra_sem, cho
                 if run_triggered:
                     if slot_id not in active_subprocesses or not active_subprocesses[slot_id].is_alive():
                         # Calculate staggered delay (e.g., 5 seconds delay per sequential task)
-                        start_delay = device_task_count * 5
+                        #start_delay = device_task_count * 5
+                        start_delay = 0
                         device_task_count += 1
 
                         p = multiprocessing.Process(
@@ -388,9 +391,13 @@ def monitor_mode(my_id, intra_sem, p_int=6, lock_wait=6):
 
 # =============================================================================
 # MAIN MENU EXECUTION
-# =============================================================================
-if __name__ == "__main__":
+# =========(====================================================================
+
+def prelim_main_folder_parser_integra98():
     multiprocessing.freeze_support()
+
+    MAX_INTRA_CONCURRENCY = int(input("Enter max_intra_concurrency: "))  # Max tasks per this specific device
+    MAX_INTER_CONCURRENCY = int(input("Enter max_inter_concurrency: "))  # M  # Max tasks across ALL devices globally
 
     # Initial Setup Prompts
     raw_input = input("What device are you currently on (ex. 1, 2, 3)? >? ").strip()
@@ -406,13 +413,7 @@ if __name__ == "__main__":
         print("✅ Cleanup complete. All previous locks purged.")
     except Exception as e:
         print(f"⚠️ Cleanup failed (check network): {e}")
-    """
-    print("MULTI_DEVICE_INTER_CONCURRENCY SUBROUTINE COUNT: " + f'{MAX_INTRA_CONCURRENCY=}')
-    print("MULTI_DEVICE_INTRA_CONCURRENCY SUBROUTINE COUNT: " + f'{MAX_INTER_CONCURRENCY=}')
 
-    print("MULTI_DEVICE_INTER_CONCURRENCY SUBPROCESS COUNT: " + f'{MAX_INTRA_CONCURRENCY=}')
-    print("MULTI_DEVICE_INTRA_CONCURRENCY SUBPROCESS COUNT: " + f'{MAX_INTER_CONCURRENCY=}')
-    """
     print(f'{MAX_INTRA_CONCURRENCY=}')
     print(f'{MAX_INTER_CONCURRENCY=}')
     # Main Loop
@@ -439,3 +440,2124 @@ if __name__ == "__main__":
         elif choice == '3':
             print("System shutting down.")
             sys.exit()
+
+if __name__ == "__main__":
+    setter = input("Enter pre-set (#1 non-prelim *7, #2 prelim *7, #3 user_select, #4 non-prelim inputting, #5 deprecated, #6 non-prelim/prelim insert_timeline_items, #8 upload to draft for both prelim and non prelim and generate prelim and non prelim, #9 prelim * 7 with multi, #10 send to non-prelim/prelim, #11 send to non-prelim, #12 send to prelim, #13 prelim local file path addition debug): ")
+    if int(setter) == 1:
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7)  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7)
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '5'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 2:
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7)  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7)
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '4'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 3:
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(input("Enter max_intra_concurrency: "))   # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(input("Enter max_inter_concurrency: ")) # M  # Max tasks across ALL devices globally
+
+        # Initial Setup Prompts
+        raw_input = input("What device are you currently on (ex. 1, 2, 3)? >? ").strip()
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = input("> >? ").strip()
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = input("Enter poll interval (seconds to check for NEW instructions): >? ").strip()
+                p_interval = int(p_int_input) if p_int_input else 6
+
+                l_wait_input = input("Enter lock wait timer (seconds to wait between busy-lock retries): >? ").strip()
+                l_wait = int(l_wait_input) if l_wait_input else 6
+
+                input_mode_id = input("Enter 1) MONITOR_FOLDER_ID, 2) 1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v, or 3) generate_instruction_set(), 4) generate_instruction_set_ELEMENT3(), or 5) generate_instruction_set_DESIGNATION4") or int("2")
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3() #prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4() #vg_prompt_formula *7
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+            multiprocessing.freeze_support()
+
+            MAX_INTRA_CONCURRENCY = int(7)  # Max tasks per this specific device
+            MAX_INTER_CONCURRENCY = int(7)
+            # Initial Setup Prompts
+            raw_input = '1'
+            dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+            intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+            # Automated Startup Purge
+            print("Scrubbing Drive for orphaned locks...")
+            try:
+                temp_service = get_drive_service()
+                purge_all_locks(temp_service, LOCK_FOLDER_ID)
+                print("✅ Cleanup complete. All previous locks purged.")
+            except Exception as e:
+                print(f"⚠️ Cleanup failed (check network): {e}")
+
+            print(f'{MAX_INTRA_CONCURRENCY=}')
+            print(f'{MAX_INTER_CONCURRENCY=}')
+            # Main Loop
+            while True:
+                print(f"\n=== System Initialized (Device {dev_id}) ===")
+                print("1. Instruction Builder / Relay Mode")
+                print("2. Start Multi-Device Monitor Mode")
+                print("3. Exit")
+                choice = '2'
+
+                if choice == '1':
+                    instruction_builder(dev_id, choice, intra_semaphore)
+
+                elif choice == '2':
+                    # Dynamic polling and lock wait prompts
+                    p_int_input = '30'
+                    p_interval = int(p_int_input)
+
+                    l_wait_input = '30'
+                    l_wait = int(l_wait_input)
+
+                    input_mode_id = '4'
+
+                    if int(input_mode_id) == int('1'):
+                        MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                    elif int(input_mode_id) == int('2'):
+                        MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                    elif int(input_mode_id) == int('3'):
+                        MONITOR_FOLDER_ID = generate_instruction_set()
+                    elif int(input_mode_id) == int('4'):
+                        MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                    elif int(input_mode_id) == int('5'):
+                        MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                    print(f'{MONITOR_FOLDER_ID=}')
+                    monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+                elif choice == '3':
+                    print("System shutting down.")
+                    sys.exit()
+    elif int(setter) == 4:
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7)  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7)
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '30'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '30'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '6'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_send_to_post_designation(email_address=email_address)  # upload to draft for vg_prompt_formula
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 5: #input_mode_id==6 only sends, doesn't generate instruction_set
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7)  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7)
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '30'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '30'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '6'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(email_address)  # upload to draft for vg_prompt_formula
+
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 6: #input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'prelim_main_folder_parser_integra11.py',  # The name or relative path of your script
+                'func': 'variable_function_local_sync_parser_11',  # The specific function to call inside that script
+                'f_count': 7,  # Generate 3 "FUNCTIONAL" blocks for this script
+                'nf_count': 1  # Generate 1 "NOT FUNCTIONAL" block for this script
+            },
+            {
+                'file': 'prompt_gemini_for_vg_prompt_formula_inserter0_1_11_integra11.py',
+                'func': 'variable_function_local_sync_parser_11',
+                'f_count': 7,
+                'nf_count': 1
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            }
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '30'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '30'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service, scripts_config=my_scripts_config)  # upload to draft for vg_prompt_formula
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 7: #must be edited for posterity maybe so
+        email_address = "komi622gefe@post.wordpress.com"
+
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'prompt_gemini_for_vg_prompt_formula_inserter0_1_11_integra11.py',
+                'func': 'variable_function_local_sync_parser_11',
+                'f_count': 7,
+                'nf_count': 1
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '30'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '30'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service, scripts_config=my_scripts_config)  # upload to draft for vg_prompt_formula
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()#
+    elif int(setter) == 8:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'prelim_main_folder_parser_integra11.py',  # The name or relative path of your script
+                'func': 'variable_function_local_sync_parser_11',
+                # The specific function to call inside that script
+                'f_count': 7,  # Generate 3 "FUNCTIONAL" blocks for this script
+                'nf_count': 1  # Generate 1 "NOT FUNCTIONAL" block for this script
+            },
+            {
+                'file': 'prompt_gemini_for_vg_prompt_formula_inserter0_1_11_integra11.py',
+                'func': 'variable_function_local_sync_parser_11',
+                'f_count': 7,
+                'nf_count': 1
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            }
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 9:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'prelim_main_folder_parser_integra11.py',  # The name or relative path of your script
+                'func': 'variable_function_local_sync_parser_11',
+                # The specific function to call inside that script
+                'f_count': 7,  # Generate 3 "FUNCTIONAL" blocks for this script
+                'nf_count': 1  # Generate 1 "NOT FUNCTIONAL" block for this script
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 10:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 11:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 12:
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 13:  #  new column: local file path
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'prelim_main_folder_parser_integra12MAIN.py',
+                'func': 'variable_function_local_sync_parser_11',
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 14:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 15:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 16:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 17:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 18:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 19:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 20:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+    elif int(setter) == 21:  # input_mode_id==7
+        email_address = "komi622gefe@post.wordpress.com"
+
+        # Define the scripts, their functions, and how many times they should run
+        my_scripts_config = [
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_vg_standard',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+            {
+                'file': 'send_email_post_to_wordpress1_10_12wslotid.py',
+                'func': 'send_email_to_wordpress_non_vg_standard6',
+                'email_address': email_address,
+                'f_count': 1,
+                'nf_count': 7
+            },
+        ]
+
+        # Initialize counters
+        total_f = 0
+        total_nf = 0
+
+        # Iterate and sum
+        for script in my_scripts_config:
+            total_f += script.get('f_count', 0)
+            total_nf += script.get('nf_count', 0)
+
+        # Display results
+        print(f"Total Functional (f_count): {total_f}")
+        print(f"Total Not Functional (nf_count): {total_nf}")
+        print(f"Combined Total: {total_f + total_nf}")
+
+        total_processes = total_f + total_nf
+
+        """
+        # Passing it into the function
+        execute_unified_pipeline(
+            device_count=1,
+            device_id='1',
+            scripts_config=my_scripts_config,
+        )
+        """
+        email_address = "komi622gefe@post.wordpress.com"
+        multiprocessing.freeze_support()
+
+        MAX_INTRA_CONCURRENCY = int(7) or total_processes  # Max tasks per this specific device
+        MAX_INTER_CONCURRENCY = int(7) or total_processes
+        # Initial Setup Prompts
+        raw_input = '1'
+        dev_id = ''.join(filter(str.isdigit, raw_input)) or "1"
+
+        intra_semaphore = multiprocessing.Semaphore(MAX_INTRA_CONCURRENCY)
+
+        temp_service = None
+        # Automated Startup Purge
+        print("Scrubbing Drive for orphaned locks...")
+        try:
+            temp_service = get_drive_service()
+            purge_all_locks(temp_service, LOCK_FOLDER_ID)
+            print("✅ Cleanup complete. All previous locks purged.")
+        except Exception as e:
+            print(f"⚠️ Cleanup failed (check network): {e}")
+
+        print(f'{MAX_INTRA_CONCURRENCY=}')
+        print(f'{MAX_INTER_CONCURRENCY=}')
+        # Main Loop
+        while True:
+            print(f"\n=== System Initialized (Device {dev_id}) ===")
+            print("1. Instruction Builder / Relay Mode")
+            print("2. Start Multi-Device Monitor Mode")
+            print("3. Exit")
+            choice = '2'
+
+            if choice == '1':
+                instruction_builder(dev_id, choice, intra_semaphore)
+
+            elif choice == '2':
+                # Dynamic polling and lock wait prompts
+                p_int_input = '120'
+                p_interval = int(p_int_input)
+
+                l_wait_input = '120'
+                l_wait = int(l_wait_input)
+
+                input_mode_id = '7'
+
+                if int(input_mode_id) == int('1'):
+                    MONITOR_FOLDER_ID = input("Enter MONITOR_FOLDER_ID: ")
+                elif int(input_mode_id) == int('2'):
+                    MONITOR_FOLDER_ID = "1DSvZIGaEkBm5hjwCNKCiKyC-EvmEOw_v"
+                elif int(input_mode_id) == int('3'):
+                    MONITOR_FOLDER_ID = generate_instruction_set()
+                elif int(input_mode_id) == int('4'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_ELEMENT3()  # prelim *7
+                elif int(input_mode_id) == int('5'):
+                    MONITOR_FOLDER_ID = generate_instruction_set_DESIGNATION4()  # vg_prompt_formula *7
+                elif int(input_mode_id) == int('6'):
+                    MONITOR_FOLDER_ID = send_email_to_wordpress_vg_standard(
+                        email_address)  # upload to draft for vg_prompt_formula, doesn't return folder_id
+                elif int(input_mode_id) == int('7'):
+                    MONITOR_FOLDER_ID = execute_unified_pipeline(drive_service=temp_service,
+                                                                 scripts_config=my_scripts_config)  # upload to draft for both prelim and non prelim and generate prelim and non prelim
+                print(f'{MONITOR_FOLDER_ID=}')
+                monitor_mode(dev_id, intra_semaphore, p_int=p_interval, lock_wait=l_wait)
+
+            elif choice == '3':
+                print("System shutting down.")
+                sys.exit()
+
+
